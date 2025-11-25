@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useEffect, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Book, Plus, Calendar, Save, Sparkles } from 'lucide-react';
 import { useRequireUser } from '@/lib/useRequireUser';
@@ -24,8 +24,7 @@ const formatTime = (dateStr) => {
     }
 };
 
-// 1. Rename the inner component to 'JournalsContent'
-// This component contains the logic that uses useSearchParams
+// --- INNER COMPONENT (Contains the Logic) ---
 function JournalsContent() {
     const params = useSearchParams();
     const router = useRouter();
@@ -92,6 +91,7 @@ function JournalsContent() {
             }
         };
         fetchEntries();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [authLoading, visionId]);
 
     const selectEntry = (entry) => {
@@ -109,9 +109,7 @@ function JournalsContent() {
     };
 
     const handleSave = async () => {
-        // LOCKING LOGIC: Prevent saving if not a new entry
-        if (selectedId !== 'new') return; 
-
+        if (selectedId !== 'new') return;
         if (!visionId || !draftText?.trim()) return;
         setSaving(true);
         setError('');
@@ -213,7 +211,6 @@ function JournalsContent() {
                                 <div className="editor-actions">
                                     <button 
                                         className={`save-button ${saving ? 'saving' : ''}`}
-                                        // LOCKING LOGIC: Disable save for old entries
                                         disabled={selectedId !== 'new' || saving || !draftText.trim()}
                                         onClick={() => {
                                             if (selectedId === 'new') handleSave();
@@ -239,7 +236,6 @@ function JournalsContent() {
                                 className="journal-textarea"
                                 value={draftText}
                                 onChange={(e) => {
-                                    // LOCKING LOGIC: Prevent typing in old entries
                                     if (selectedId === 'new') setDraftText(e.target.value);
                                 }}
                                 placeholder={placeholder}
@@ -261,8 +257,8 @@ function JournalsContent() {
     );
 }
 
-// 2. Wrap the content component in Suspense for the Default Export
-// This satisfies Next.js build requirements for useSearchParams
+// --- MAIN EXPORT (The Wrapper) ---
+// This is the default export that Next.js sees. It wraps everything in Suspense.
 export default function JournalsPage() {
     return (
         <Suspense fallback={<div className="journals-loading">Loading journals...</div>}>
