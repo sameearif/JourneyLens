@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Book, Plus, Calendar, Save, Sparkles } from 'lucide-react';
 import { useRequireUser } from '@/lib/useRequireUser';
@@ -263,4 +263,10 @@ function JournalsPage() {
     );
 }
 
-export default JournalsPage;
+export default function JournalsPageWithSuspense() {
+    return (
+        <Suspense fallback={<div className="journals-loading">Loading journals...</div>}>
+            <JournalsPage />
+        </Suspense>
+    );
+}
