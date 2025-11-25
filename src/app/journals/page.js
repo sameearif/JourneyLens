@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Book, Plus, Calendar, Save, Sparkles } from 'lucide-react';
 import { useRequireUser } from '@/lib/useRequireUser';
@@ -24,7 +24,9 @@ const formatTime = (dateStr) => {
     }
 };
 
-function JournalsPage() {
+// 1. Rename the inner component to 'JournalsContent'
+// This component contains the logic that uses useSearchParams
+function JournalsContent() {
     const params = useSearchParams();
     const router = useRouter();
     const { loading: authLoading } = useRequireUser();
@@ -38,7 +40,7 @@ function JournalsPage() {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
     const [placeholder, setPlaceholder] = useState('');
-    const [showToast, setShowToast] = useState(false); // State for popup
+    const [showToast, setShowToast] = useState(false);
     const textareaRef = useRef(null);
 
     useEffect(() => {
@@ -53,7 +55,6 @@ function JournalsPage() {
         return () => window.removeEventListener('resize', update);
     }, []);
 
-    // Auto-resize textarea
     useEffect(() => {
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto';
@@ -91,7 +92,6 @@ function JournalsPage() {
             }
         };
         fetchEntries();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [authLoading, visionId]);
 
     const selectEntry = (entry) => {
@@ -109,11 +109,13 @@ function JournalsPage() {
     };
 
     const handleSave = async () => {
-        if (selectedId !== 'new') return; // existing entries are locked
+        // LOCKING LOGIC: Prevent saving if not a new entry
+        if (selectedId !== 'new') return; 
+
         if (!visionId || !draftText?.trim()) return;
         setSaving(true);
         setError('');
-        setShowToast(false); // Reset toast if already open
+        setShowToast(false);
         try {
             const res = await fetch('/api/journals', {
                 method: 'POST',
@@ -128,7 +130,6 @@ function JournalsPage() {
             if (!res.ok) throw new Error(data.error || 'Failed to save entry');
             
             const newEntry = data.journal;
-            // Update list: remove old version if exists, add new to top
             const others = entries.filter((e) => e.journal_id !== newEntry.journal_id);
             const updated = [newEntry, ...others];
             
@@ -137,9 +138,8 @@ function JournalsPage() {
             setDraftText(newEntry.journal_text || '');
             setDraftDate(newEntry.entry_date);
 
-            // Show Success Toast
             setShowToast(true);
-            setTimeout(() => setShowToast(false), 4000); // Hide after 4s
+            setTimeout(() => setShowToast(false), 4000);
 
         } catch (err) {
             console.error('Save journal failed', err);
@@ -153,7 +153,6 @@ function JournalsPage() {
 
     return (
         <div className="journals-container">
-            {/* Header */}
             <header className="journals-header">
                 <button className="back-button" onClick={() => router.back()}>
                     <ArrowLeft size={18} />
@@ -170,7 +169,6 @@ function JournalsPage() {
                 </div>
             ) : (
                 <div className="journals-layout">
-                    {/* Sidebar */}
                     <aside className="journals-sidebar">
                         <div className="sidebar-header">
                             <div className="sidebar-title-group">
@@ -200,7 +198,6 @@ function JournalsPage() {
                         </div>
                     </aside>
 
-                    {/* Editor Area */}
                     <main className="journals-content">
                         <div className="editor-card">
                             <div className="editor-header">
@@ -216,6 +213,7 @@ function JournalsPage() {
                                 <div className="editor-actions">
                                     <button 
                                         className={`save-button ${saving ? 'saving' : ''}`}
+                                        // LOCKING LOGIC: Disable save for old entries
                                         disabled={selectedId !== 'new' || saving || !draftText.trim()}
                                         onClick={() => {
                                             if (selectedId === 'new') handleSave();
@@ -241,6 +239,7 @@ function JournalsPage() {
                                 className="journal-textarea"
                                 value={draftText}
                                 onChange={(e) => {
+                                    // LOCKING LOGIC: Prevent typing in old entries
                                     if (selectedId === 'new') setDraftText(e.target.value);
                                 }}
                                 placeholder={placeholder}
@@ -252,7 +251,6 @@ function JournalsPage() {
                 </div>
             )}
 
-            {/* Success Popup */}
             {showToast && (
                 <div className="toast-notification">
                     <Sparkles size={20} className="toast-icon" />
@@ -263,10 +261,12 @@ function JournalsPage() {
     );
 }
 
-export default function JournalsPageWithSuspense() {
+// 2. Wrap the content component in Suspense for the Default Export
+// This satisfies Next.js build requirements for useSearchParams
+export default function JournalsPage() {
     return (
         <Suspense fallback={<div className="journals-loading">Loading journals...</div>}>
-            <JournalsPage />
+            <JournalsContent />
         </Suspense>
     );
 }
