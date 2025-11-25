@@ -1,3 +1,6 @@
+import Navbar from "@/components/Navbar";
+import './globals.css'
+
 export const metadata = {
   title: "JourneyLens",
   description: "",
@@ -6,7 +9,12 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <div className='navbar'>
+          <Navbar  />
+        </div>
+        {children}
+      </body>
     </html>
   );
 }

@@ -1,0 +1,340 @@
+.journals-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 120px 20px 80px 20px;
+    color: #111;
+    font-family: "IBM Plex Sans Condensed", sans-serif;
+    min-height: 100vh;
+    position: relative; /* Context for absolute/fixed elements if needed */
+}
+
+/* Header */
+.journals-header {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+}
+
+.back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: none;
+    color: #6b7280;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 8px 0;
+    transition: color 0.2s;
+}
+.back-button:hover {
+    color: #111;
+}
+
+/* Layout */
+.journals-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 40px;
+    align-items: start;
+}
+
+/* Sidebar */
+.journals-sidebar {
+    position: sticky;
+    top: 40px;
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    padding: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sidebar-title-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #111;
+}
+
+.sidebar-title-group h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.new-entry-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.new-entry-btn:hover {
+    background: #000;
+}
+
+.entry-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.entry-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 12px 14px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+    gap: 4px;
+}
+
+.entry-item:hover {
+    background: #f9fafb;
+    border-color: #e5e7eb;
+}
+
+.entry-item.active {
+    background: #f3f4f6;
+    border-color: #e5e7eb;
+}
+
+.entry-item.active .entry-date {
+    color: #111;
+}
+
+.entry-date {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #374151;
+}
+
+.entry-snippet {
+    font-size: 0.8rem;
+    color: #9ca3af;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+.empty-entries {
+    color: #9ca3af;
+    font-size: 0.9rem;
+    font-style: italic;
+    padding: 10px;
+}
+
+/* Editor Main Content */
+.journals-content {
+    min-height: 500px;
+}
+
+.editor-card {
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: fadeIn 0.4s ease-out;
+    min-height: 60vh;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid #f9fafb;
+    background: #fff;
+}
+
+.editor-date {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #6b7280;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.save-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: 1px solid #e5e7eb;
+    color: #374151;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.save-button:hover:not(:disabled) {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
+}
+
+.save-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f3f4f6;
+}
+
+.journal-textarea {
+    flex: 1;
+    width: 100%;
+    border: none;
+    outline: none;
+    resize: none;
+    padding: 30px 40px;
+    font-family: inherit;
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #1f2937;
+    background: transparent;
+    min-height: 400px;
+}
+
+.journal-textarea::placeholder {
+    color: #d1d5db;
+    font-style: italic;
+    font-weight: 300;
+}
+
+/* Loading States */
+.journals-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    color: #6b7280;
+    gap: 16px;
+}
+
+.loader-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #e5e7eb;
+    border-top-color: #1a1a1a;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(0,0,0,0.1);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.journals-error {
+    padding: 16px;
+    border-radius: 12px;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+    margin-bottom: 20px;
+}
+
+/* Toast Notification */
+.toast-notification {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #1a1a1a;
+    color: #ffffff;
+    padding: 14px 24px;
+    border-radius: 100px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 2000;
+    font-size: 0.95rem;
+    font-weight: 500;
+    animation: toastSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.toast-icon {
+    color: #FFD700; /* Gold color for sparkles */
+}
+
+@keyframes toastSlideUp {
+    from { opacity: 0; transform: translate(-50%, 20px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .journals-layout {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+    
+    .journals-sidebar {
+        position: static;
+        max-height: none;
+    }
+
+    .journals-container {
+        padding-top: 20px;
+    }
+    
+    .journal-textarea {
+        padding: 20px;
+        font-size: 1rem;
+    }
+
+    .toast-notification {
+        width: 90%;
+        justify-content: center;
+        bottom: 20px;
+    }
+}

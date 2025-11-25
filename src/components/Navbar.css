@@ -1,0 +1,62 @@
+.navbar-wrapper {
+    display: flex;
+    height: 60px;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    font-family: "IBM Plex Sans Condensed", sans-serif;
+    background-color: white;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-left: 30px;
+    border: none;
+    background: transparent;
+    padding: 4px 6px;
+    cursor: pointer;
+    transition: transform 150ms ease, opacity 150ms ease;
+}
+.logo:hover {
+    transform: translateY(-1px);
+    opacity: 0.9;
+}
+
+.logo-image {
+    width: 35px;
+    height: 35px;
+    margin-right: 10px;
+    border-radius: 0.3rem;
+    background-image: url('/logo.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.logo-text span {
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.nav-items {
+    margin-right: 30px;
+}
+
+.nav-logout {
+    border-radius: 999px;
+    border: 1px solid #d1d5db;
+    background: transparent;
+    color: #374151;
+    font-weight: 500;
+    padding: 0.45rem 1.2rem;
+    cursor: pointer;
+    transition: border-color 150ms ease, color 150ms ease;
+    font-size: 0.85rem;
+}
+
+.nav-logout:hover {
+    border-color: #111827;
+    color: #111827;
+}
