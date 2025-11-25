@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Send, ArrowLeft } from 'lucide-react';
+import ReactMarkdown from 'react-markdown'; // Import for formatting
 import { useRequireUser } from '@/lib/useRequireUser';
 import './styles.css';
 
@@ -80,7 +81,7 @@ function Chat({ onBack }) {
             const longTermTodos = normalizeTodos(summaryData.longTermTodos);
             const shortTermTodos = normalizeTodos(summaryData.shortTermTodos);
             
-            // Small artificial delay so the user sees "Step 2"
+            // Artificial delay for UX
             await new Promise(r => setTimeout(r, 800));
 
             // =========================================================
@@ -275,14 +276,14 @@ function Chat({ onBack }) {
 
             setIsLoading(true);
 
-            // UPDATED: Appending "\n\nNext question: " to user messages
+            // UPDATED: Appending "\n\nNext question: " to user messages in the API call only
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     messages: allMessages.map((m) => ({
                         role: m.sender === 'ai' ? 'model' : 'user',
-                        // Inject the prompt instruction if it is a user message
+                        // Inject instruction so AI keeps interview going
                         content: m.sender === 'user' ? `${m.text}\n\nNext question: ` : m.text
                     }))
                 }),
@@ -343,7 +344,8 @@ function Chat({ onBack }) {
                             {msg.sender === 'ai' ? 'JourneyLens AI' : 'You'}
                         </span>
                         <div className="message-bubble">
-                            {msg.text}
+                            {/* Use ReactMarkdown to render the text */}
+                            <ReactMarkdown>{msg.text}</ReactMarkdown>
                         </div>
                     </div>
                 ))}

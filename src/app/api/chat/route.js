@@ -14,22 +14,25 @@ export async function POST(request) {
       );
     }
 
-    const { messages } = await request.json();
+    const { messages, systemPrompt } = await request.json();
 
     if (!Array.isArray(messages)) {
       return NextResponse.json({ error: 'messages array required' }, { status: 400 });
     }
 
+    const basePrompt = (systemPrompt || SYSTEM_PROMPT || '').trim();
     const contents = [
-      {
-        role: 'user',
-        parts: [{ text: SYSTEM_PROMPT.trim() }],
-      },
+      basePrompt
+        ? {
+            role: 'user',
+            parts: [{ text: basePrompt }],
+          }
+        : null,
       ...messages.map((msg) => ({
         role: msg.role || 'user',
         parts: [{ text: msg.content || '' }],
       })),
-    ];
+    ].filter(Boolean);
 
     const response = await ai.models.generateContent({
       model: MODEL,
