@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { Suspense, useEffect, useState, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, BookOpen, Clock, Pencil } from 'lucide-react';
 import { useRequireUser } from '@/lib/useRequireUser';
@@ -34,7 +34,8 @@ const parseStoryImages = (raw) => {
     }
 };
 
-function StoriesPage() {
+// --- INNER COMPONENT (Contains Logic & SearchParams) ---
+function StoriesContent() {
     const params = useSearchParams();
     const router = useRouter();
     const { user, loading: authLoading } = useRequireUser();
@@ -296,4 +297,12 @@ function StoriesPage() {
     );
 }
 
-export default StoriesPage;
+// --- MAIN EXPORT (The Wrapper) ---
+// Wraps the logic in Suspense to prevent build errors
+export default function StoriesPage() {
+    return (
+        <Suspense fallback={<div className="stories-loading">Loading stories...</div>}>
+            <StoriesContent />
+        </Suspense>
+    );
+}
