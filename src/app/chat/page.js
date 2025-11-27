@@ -7,7 +7,7 @@ import { useRequireUser } from '@/lib/useRequireUser';
 import './styles.css';
 
 const INTRO_MESSAGE = "Hi! I'd love to help you craft your vision. What would you like this vision to be about?";
-const SUMMARY_THRESHOLD = 3;
+const SUMMARY_THRESHOLD = 10;
 const formatAssistantText = (text) => (text || '').replace(/\r?\n/g, '\n\n');
 const formatDisplayText = (text) => (text || '').replace(/\r?\n/g, '\n\n');
 
