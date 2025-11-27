@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Send, ArrowLeft, Pencil, X, Check, Mic, Square, Volume2 } from 'lucide-react'; 
 import ReactMarkdown from 'react-markdown';
@@ -36,6 +36,7 @@ function Chat({ onBack }) {
     const [audioLoadingId, setAudioLoadingId] = useState(null);
     const [audioPlayingId, setAudioPlayingId] = useState(null);
     const [audioReady, setAudioReady] = useState({ 1: true }); // default intro message uses bundled audio
+    const [canAutoplay, setCanAutoplay] = useState(false);
     
     const [progress, setProgress] = useState({
         step: 0,
@@ -48,6 +49,17 @@ function Chat({ onBack }) {
     const mediaStreamRef = useRef(null);
     const audioCacheRef = useRef(new Map());
     const audioElementRef = useRef(null);
+    const lastAutoPlayedIdRef = useRef(null);
+    const lastAutoAttemptedIdRef = useRef(null);
+    const pendingAutoPlayIdRef = useRef(null);
+    const latestAiMessage = useMemo(
+        () => [...messages].reverse().find((m) => m.sender === 'ai'),
+        [messages]
+    );
+    const waitingForLatestAudio = useMemo(() => {
+        if (!latestAiMessage) return false;
+        return !audioReady[latestAiMessage.id] || audioLoadingId === latestAiMessage.id;
+    }, [latestAiMessage, audioReady, audioLoadingId]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -409,16 +421,17 @@ function Chat({ onBack }) {
     }, [messages]);
 
     // --- Text to Speech ---
-    const playAudioForMessage = async (msg) => {
+    const playAudioForMessage = async (msg, prefetchedUrl = null) => {
         if (!msg?.text) return;
         if (audioPlayingId === msg.id) return;
 
-        const audioUrl = await fetchAudioUrl(msg);
+        const audioUrl = prefetchedUrl || await fetchAudioUrl(msg);
         if (!audioUrl) return;
 
         try {
             if (audioElementRef.current) {
                 audioElementRef.current.pause();
+                audioElementRef.current.currentTime = 0;
                 audioElementRef.current = null;
             }
             const audio = new Audio(audioUrl);
@@ -427,11 +440,68 @@ function Chat({ onBack }) {
             audio.onended = () => setAudioPlayingId(null);
             audio.onerror = () => setAudioPlayingId(null);
             await audio.play();
+            return true;
         } catch (err) {
             console.error('Audio play failed', err);
+            if (err?.name === 'NotAllowedError') {
+                // Browser blocked autoplay; remember to retry after interaction
+                pendingAutoPlayIdRef.current = msg.id;
+                lastAutoAttemptedIdRef.current = null;
+            }
             setAudioPlayingId(null);
+            return false;
         }
     };
+
+    // Track user interaction to enable autoplay (browsers block it until interaction).
+    useEffect(() => {
+        if (canAutoplay) return;
+
+        const enable = () => {
+            setCanAutoplay(true);
+            if (pendingAutoPlayIdRef.current) {
+                lastAutoPlayedIdRef.current = null;
+            }
+        };
+
+        window.addEventListener('pointerdown', enable, { once: true });
+        window.addEventListener('keydown', enable, { once: true });
+        return () => {
+            window.removeEventListener('pointerdown', enable);
+            window.removeEventListener('keydown', enable);
+        };
+    }, [canAutoplay]);
+
+    // Auto-play the latest AI message once its audio is ready, stopping any previous playback.
+    useEffect(() => {
+        const autoPlay = async () => {
+            if (!canAutoplay) {
+                const latest = [...messages].reverse().find((m) => m.sender === 'ai');
+                if (latest) pendingAutoPlayIdRef.current = latest.id;
+                return;
+            }
+            if (isSummarizing || isRecording || isTranscribing) return;
+            const latestAi = [...messages].reverse().find((m) => m.sender === 'ai');
+            if (!latestAi) return;
+            if (latestAi.id === lastAutoPlayedIdRef.current) return;
+            if (latestAi.id === lastAutoAttemptedIdRef.current) return;
+
+            const cachedUrl = audioReady[latestAi.id] ? audioCacheRef.current.get(latestAi.id) : null;
+            const audioUrl = cachedUrl || await fetchAudioUrl(latestAi);
+            if (!audioUrl) return;
+
+            lastAutoAttemptedIdRef.current = latestAi.id;
+            const played = await playAudioForMessage(latestAi, audioUrl);
+            if (played !== false) {
+                lastAutoPlayedIdRef.current = latestAi.id;
+                pendingAutoPlayIdRef.current = null;
+            } else {
+                lastAutoAttemptedIdRef.current = null; // allow retry if conditions change
+            }
+        };
+        autoPlay();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [messages, audioReady, isSummarizing, isRecording, isTranscribing, canAutoplay]);
 
     const saveEditedMessage = async (originalMsgId) => {
         if (!editContent.trim()) return;
@@ -608,7 +678,13 @@ function Chat({ onBack }) {
                         placeholder="Type your message..."
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
-                        disabled={isLoading || isSummarizing || editingMessageId !== null || isTranscribing}
+                        disabled={
+                            isLoading ||
+                            isSummarizing ||
+                            editingMessageId !== null ||
+                            isTranscribing ||
+                            waitingForLatestAudio
+                        }
                     />
                     <button
                         type="button"
@@ -622,7 +698,13 @@ function Chat({ onBack }) {
                     <button 
                         type="submit" 
                         className="send-button" 
-                        disabled={isLoading || isSummarizing || editingMessageId !== null || isTranscribing}
+                        disabled={
+                            isLoading ||
+                            isSummarizing ||
+                            editingMessageId !== null ||
+                            isTranscribing ||
+                            waitingForLatestAudio
+                        }
                     >
                         <Send size={18} />
                     </button>

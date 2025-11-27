@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Send, Pencil, X, Check, Mic, Square, Volume2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -34,12 +34,24 @@ function Advice() {
   const [audioLoadingId, setAudioLoadingId] = useState(null);
   const [audioPlayingId, setAudioPlayingId] = useState(null);
   const [audioReady, setAudioReady] = useState({ 1: true });
+  const [canAutoplay, setCanAutoplay] = useState(false);
   
   const messagesEndRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const audioCacheRef = useRef(new Map());
   const audioElementRef = useRef(null);
+  const lastAutoPlayedIdRef = useRef(null);
+  const lastAutoAttemptedIdRef = useRef(null);
+  const pendingAutoPlayIdRef = useRef(null);
+  const latestAiMessage = useMemo(
+    () => [...messages].reverse().find((m) => m.sender === 'ai'),
+    [messages]
+  );
+  const waitingForLatestAudio = useMemo(() => {
+    if (!latestAiMessage) return false;
+    return !audioReady[latestAiMessage.id] || audioLoadingId === latestAiMessage.id;
+  }, [latestAiMessage, audioReady, audioLoadingId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -213,16 +225,17 @@ function Advice() {
   }, []);
 
   // --- Text to Speech ---
-  const playAudioForMessage = async (msg) => {
+  const playAudioForMessage = async (msg, prefetchedUrl = null) => {
     if (!msg?.text) return;
     if (audioPlayingId === msg.id) return;
 
-    const audioUrl = await fetchAudioUrl(msg);
+    const audioUrl = prefetchedUrl || await fetchAudioUrl(msg);
     if (!audioUrl) return;
 
     try {
       if (audioElementRef.current) {
         audioElementRef.current.pause();
+        audioElementRef.current.currentTime = 0;
         audioElementRef.current = null;
       }
       const audio = new Audio(audioUrl);
@@ -231,9 +244,15 @@ function Advice() {
       audio.onended = () => setAudioPlayingId(null);
       audio.onerror = () => setAudioPlayingId(null);
       await audio.play();
+      return true;
     } catch (err) {
       console.error('Audio play failed', err);
+      if (err?.name === 'NotAllowedError') {
+        pendingAutoPlayIdRef.current = msg.id;
+        lastAutoAttemptedIdRef.current = null;
+      }
       setAudioPlayingId(null);
+      return false;
     }
   };
 
@@ -295,6 +314,54 @@ function Advice() {
     ensureAudioForMessages();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages]);
+
+  // Track user interaction to enable autoplay.
+  useEffect(() => {
+    if (canAutoplay) return;
+    const enable = () => {
+      setCanAutoplay(true);
+      if (pendingAutoPlayIdRef.current) {
+        lastAutoPlayedIdRef.current = null;
+      }
+    };
+    window.addEventListener('pointerdown', enable, { once: true });
+    window.addEventListener('keydown', enable, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', enable);
+      window.removeEventListener('keydown', enable);
+    };
+  }, [canAutoplay]);
+
+  // Auto-play latest AI response, stopping any previous playback.
+  useEffect(() => {
+    const autoPlay = async () => {
+      if (!canAutoplay) {
+        const latest = [...messages].reverse().find((m) => m.sender === 'ai');
+        if (latest) pendingAutoPlayIdRef.current = latest.id;
+        return;
+      }
+      if (isRecording || isTranscribing) return;
+      const latestAi = [...messages].reverse().find((m) => m.sender === 'ai');
+      if (!latestAi) return;
+      if (latestAi.id === lastAutoPlayedIdRef.current) return;
+      if (latestAi.id === lastAutoAttemptedIdRef.current) return;
+
+      const cachedUrl = audioReady[latestAi.id] ? audioCacheRef.current.get(latestAi.id) : null;
+      const audioUrl = cachedUrl || await fetchAudioUrl(latestAi);
+      if (!audioUrl) return;
+
+      lastAutoAttemptedIdRef.current = latestAi.id;
+      const played = await playAudioForMessage(latestAi, audioUrl);
+      if (played !== false) {
+        lastAutoPlayedIdRef.current = latestAi.id;
+        pendingAutoPlayIdRef.current = null;
+      } else {
+        lastAutoAttemptedIdRef.current = null;
+      }
+    };
+    autoPlay();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, audioReady, isRecording, isTranscribing, canAutoplay]);
 
   const saveEditedMessage = async (originalMsgId) => {
     if (!editContent.trim()) return;
@@ -494,7 +561,12 @@ function Advice() {
             placeholder="Share what's on your mind..."
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            disabled={isLoading || isTranscribing || editingMessageId !== null}
+            disabled={
+              isLoading ||
+              isTranscribing ||
+              editingMessageId !== null ||
+              waitingForLatestAudio
+            }
           />
           <button
             type="button"
@@ -505,7 +577,16 @@ function Advice() {
           >
             {isRecording ? <Square size={16} /> : <Mic size={16} />}
           </button>
-          <button type="submit" className="send-button" disabled={isLoading || editingMessageId !== null || isTranscribing}>
+          <button
+            type="submit"
+            className="send-button"
+            disabled={
+              isLoading ||
+              editingMessageId !== null ||
+              isTranscribing ||
+              waitingForLatestAudio
+            }
+          >
             <Send size={18} />
           </button>
         </form>
