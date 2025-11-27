@@ -223,6 +223,13 @@
     background: #fff;
 }
 
+.todo-item input:disabled {
+    background: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+
 .todo-item input:focus {
     outline: none;
     border-color: #1a1a1a;

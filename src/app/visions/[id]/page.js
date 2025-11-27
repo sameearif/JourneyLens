@@ -288,6 +288,7 @@ function ViewVision() {
                                                     <input
                                                         type="text"
                                                         value={text}
+                                                        disabled={!!item.checked}
                                                         onChange={(e) => {
                                                             setLongTermTodos((prev) =>
                                                                 prev.map((t, i) =>
@@ -357,6 +358,7 @@ function ViewVision() {
                                                     <input
                                                         type="text"
                                                         value={text}
+                                                        disabled={!!item.checked}
                                                         onChange={(e) => {
                                                             setShortTermTodos((prev) =>
                                                                 prev.map((t, i) =>
