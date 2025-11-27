@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Pencil, ArrowRight, ArrowLeft, Image as ImageIcon, BookOpen, NotebookPen, Lightbulb } from 'lucide-react';
+import { Pencil, ArrowRight, ArrowLeft, Image as ImageIcon, BookOpen, NotebookPen, Lightbulb, Trash2 } from 'lucide-react';
 import { useRequireUser } from '@/lib/useRequireUser';
 import './styles.css';
 
@@ -24,6 +24,8 @@ function ViewVision() {
     const [error, setError] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     
     const [isDirty, setIsDirty] = useState(false);
     
@@ -74,19 +76,75 @@ function ViewVision() {
         setIsModalOpen(true);
     };
 
+    const normalizeForSave = (todos = []) =>
+        (todos || [])
+            .map((t) => {
+                const textValue = typeof t === 'string' ? t : t?.text || '';
+                return {
+                    text: textValue,
+                    checked: typeof t === 'string' ? false : !!t?.checked,
+                };
+            })
+            .filter((t) => (t.text || '').trim());
+
+    const buildSavePayload = (overrides = {}) => {
+        const filteredLong = normalizeForSave(longTermTodos);
+        const filteredShort = normalizeForSave(shortTermTodos);
+
+        return {
+            visionId: params.id,
+            userId: user?.user_id,
+            title,
+            description,
+            characterDescription,
+            chatHistory: [],
+            imageUrl,
+            longTermTodos: filteredLong,
+            shortTermTodos: filteredShort,
+            ...overrides,
+        };
+    };
+
+    const saveVision = async (overrides = {}) => {
+        if (!user?.user_id) {
+            setError('Missing user. Please log in again.');
+            return false;
+        }
+
+        setIsSaving(true);
+        setError('');
+        const payload = buildSavePayload(overrides);
+
+        try {
+            const res = await fetch('/api/visions', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || data.detail || 'Failed to save vision');
+            }
+            setIsDirty(false);
+            return true;
+        } catch (err) {
+            console.error('Save vision failed', err);
+            setError(err.message || 'Failed to save vision');
+            return false;
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     const generateImage = async (prompt) => {
         if (!prompt) return;
         try {
             setIsGeneratingImage(true);
-            // Use the API route that handles the specific model selection if needed
             const response = await fetch('/api/vision-image', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     prompt,
-                    // If you want to use the dev model with image context for regenerations:
-                    // imageUrl: imageUrl || null, 
-                    // model: 'black-forest-labs/FLUX.1-kontext-dev'
                 }),
             });
             const data = await response.json();
@@ -94,67 +152,54 @@ function ViewVision() {
                 throw new Error(data.error || 'Failed to generate image');
             }
             setImageUrl(data.image);
-            setIsDirty(true);
+            await saveVision({ characterDescription: prompt, imageUrl: data.image });
         } catch (err) {
             console.error('Image generation failed', err);
+            setError(err.message || 'Failed to generate image');
         } finally {
             setIsGeneratingImage(false);
         }
     };
 
-    const handlePromptSubmit = () => {
+    const handlePromptSubmit = async () => {
+        const promptValue = imagePrompt || '';
+        setCharacterDescription(promptValue);
         setIsModalOpen(false);
-        generateImage(imagePrompt);
+        // Persist the updated character description immediately
+        await saveVision({ characterDescription: promptValue });
+        // Then generate a new image and persist it when ready
+        await generateImage(promptValue);
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
+        await saveVision();
+    };
+
+    const handleDelete = async () => {
         if (!user?.user_id) {
             setError('Missing user. Please log in again.');
             return;
         }
-        const normalizeForSave = (todos = []) =>
-            (todos || [])
-                .map((t) => {
-                    const textValue = typeof t === 'string' ? t : t?.text || '';
-                    return {
-                        text: textValue,
-                        checked: typeof t === 'string' ? false : !!t?.checked,
-                    };
-                })
-                .filter((t) => (t.text || '').trim());
-
-        const filteredLong = normalizeForSave(longTermTodos);
-        const filteredShort = normalizeForSave(shortTermTodos);
-
-        setIsSaving(true);
+        setIsDeleting(true);
         setError('');
-        fetch('/api/visions', {
-            method: params.id ? 'PUT' : 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                visionId: params.id,
-                userId: user.user_id,
-                title,
-                description,
-                characterDescription,
-                chatHistory: [],
-                imageUrl,
-                longTermTodos: filteredLong,
-                shortTermTodos: filteredShort,
-            }),
-        })
-            .then(async (res) => {
-                const data = await res.json();
-                if (!res.ok) {
-                    throw new Error(data.error || data.detail || 'Failed to save vision');
-                }
-                setIsDirty(false);
-            })
-            .catch((err) => {
-                console.error('Save vision failed', err);
-                setError(err.message || 'Failed to save vision');
-            })
-            .finally(() => setIsSaving(false));
+        try {
+            const res = await fetch('/api/visions', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ visionId: params.id, userId: user.user_id }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || data.detail || 'Failed to delete vision');
+            }
+            router.push('/visions');
+        } catch (err) {
+            console.error('Delete vision failed', err);
+            setError(err.message || 'Failed to delete vision');
+        } finally {
+            setIsDeleting(false);
+            setIsDeleteModalOpen(false);
+        }
     };
 
     if (authLoading || loading) return null;
@@ -371,6 +416,13 @@ function ViewVision() {
                                 </button>
                             </div>
                             <div className="action-buttons">
+                                <button
+                                    className="btn-danger"
+                                    onClick={() => setIsDeleteModalOpen(true)}
+                                    disabled={isSaving || isGeneratingImage || isDeleting}
+                                >
+                                    {isDeleting ? <span className="btn-spinner" aria-label="Deleting" /> : <><Trash2 size={16} /> Delete Vision</>}
+                                </button>
                                 <button className="btn-primary full-width" onClick={handleSave} disabled={isSaving || isGeneratingImage || !isDirty}>
                                     {isSaving ? <span className="btn-spinner" aria-label="Saving" /> : <>Save Changes<ArrowRight size={16} /></>}
                                 </button>
@@ -395,6 +447,21 @@ function ViewVision() {
                         <div className="modal-actions">
                             <button className="btn-cancel" onClick={() => setIsModalOpen(false)}>Cancel</button>
                             <button className="btn-submit" onClick={handlePromptSubmit}>Update Image</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isDeleteModalOpen && (
+                <div className="modal-overlay" onClick={() => !isDeleting && setIsDeleteModalOpen(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <h3 className="modal-title">Delete this vision?</h3>
+                        <p className="modal-hint">This will permanently remove the vision and its saved details.</p>
+                        <div className="modal-actions">
+                            <button className="btn-cancel" onClick={() => setIsDeleteModalOpen(false)} disabled={isDeleting}>Cancel</button>
+                            <button className="btn-submit danger" onClick={handleDelete} disabled={isDeleting}>
+                                {isDeleting ? 'Deleting...' : 'Delete'}
+                            </button>
                         </div>
                     </div>
                 </div>

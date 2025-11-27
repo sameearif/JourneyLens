@@ -66,7 +66,7 @@
 }
 
 .calibrate-content {
-    max-width: 480px;
+    max-width: 560px;
     width: 100%;
     text-align: center;
     display: flex;
@@ -104,16 +104,71 @@
     margin: 0 0 16px 0;
 }
 
+/* Updated styling for the tips container */
 .calibrate-tips {
     margin-top: 8px;
     margin-bottom: 40px;
-    padding: 12px 20px;
-    background-color: #f9fafb;
-    border-radius: 8px;
+    padding: 16px 22px; /* Increased padding slightly for overall container */
+    background-color: #ffffff; 
+    border-radius: 12px; 
+    border: 1px solid #d1d5db; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); 
+    
     font-size: 0.9rem;
-    color: #6b7280;
+    color: #374151;
     font-weight: 500;
-    border: 1px solid #f3f4f6;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* Spacing between sections/lines */
+}
+
+/* Styling for the section headers (with single icon) */
+.tip-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 4px; /* Space between header and list items */
+}
+
+.tip-header h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0;
+    padding: 0;
+    font-family: "IBM Plex Sans Condensed", sans-serif;
+}
+
+/* Color codes */
+.tip-color svg {
+    color: #3b82f6; /* Blue for tips */
+}
+
+.warning-color svg {
+    color: #ef4444; /* Red for warnings */
+}
+
+/* Styling for individual lines */
+.tip-line {
+    width: 100%;
+    text-align: center; 
+    padding: 2px 0; /* Tightened spacing */
+    font-size: 0.8rem;
+}
+
+.tip-line span {
+    display: block; /* Ensure the span fills the line */
+    line-height: 1.4;
+    color: #4b5563; /* Slightly darker text color for content */
+    font-weight: 400; /* Regular weight for content */
+}
+
+/* Divider style */
+.tip-divider {
+    height: 1px;
+    background-color: #e5e7eb;
+    margin: 8px 0;
 }
 
 .begin-button,

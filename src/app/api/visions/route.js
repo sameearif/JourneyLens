@@ -173,3 +173,43 @@ export async function PUT(request) {
     );
   }
 }
+
+export async function DELETE(request) {
+  try {
+    const { visionId, userId } = await request.json();
+
+    if (!visionId || !userId) {
+      return NextResponse.json(
+        { error: 'visionId and userId are required' },
+        { status: 400 }
+      );
+    }
+
+    try {
+      const result = await query(
+        'DELETE FROM visions WHERE vision_id = $1 AND user_id = $2 RETURNING vision_id',
+        [visionId, userId]
+      );
+
+      if (!result.rowCount) {
+        return NextResponse.json(
+          { error: 'Vision not found or you do not have permission to delete it' },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({ success: true });
+    } catch (err) {
+      return NextResponse.json(
+        { error: err.message || 'Failed to delete vision', detail: err.detail || err.code },
+        { status: 500 }
+      );
+    }
+  } catch (error) {
+    console.error('Delete vision error', error);
+    return NextResponse.json(
+      { error: error?.message || 'Failed to delete vision', detail: error?.detail || error?.code },
+      { status: 500 }
+    );
+  }
+}

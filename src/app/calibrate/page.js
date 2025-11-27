@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles, ArrowRight, X } from 'lucide-react';
+import { Sparkles, ArrowRight, Lightbulb, AlertCircle } from 'lucide-react'; 
 import { useRequireUser } from '@/lib/useRequireUser';
 import Chat from '@/app/chat/page';
 import './styles.css';
@@ -49,7 +49,37 @@ function Calibrate() {
                     </p>
 
                     <div className="calibrate-tips">
-                        <span>Tip: Be as specific as possible with your answers.</span>
+                        <div className="tip-section">
+                            {/* Single Tip Header */}
+                            <div className="tip-header tip-color">
+                                <Lightbulb size={18} />
+                                <h3>Tips for Success</h3>
+                            </div>
+                            
+                            <div className="tip-line">
+                                <span>Expect roughly 8–12 quick questions to shape your vision.</span>
+                            </div>
+                            <div className="tip-line">
+                                <span>Being specific helps JourneyLens tailor the plan.</span>
+                            </div>
+                        </div>
+
+                        <div className="tip-divider" /> {/* Horizontal Line */}
+
+                        <div className="tip-section">
+                            {/* Single Warning Header */}
+                            <div className="tip-header warning-color">
+                                <AlertCircle size={18} />
+                                <h3>Important Notice</h3>
+                            </div>
+
+                            <div className="tip-line">
+                                <span>LLM output may generate inaccuracies content.</span>
+                            </div>
+                            <div className="tip-line">
+                                <span>Image generation models can sometimes misinterpret prompts.</span>
+                            </div>
+                        </div>
                     </div>
 
                     <button className="begin-button" onClick={handleBegin}>

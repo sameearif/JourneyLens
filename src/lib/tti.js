@@ -14,7 +14,7 @@ export async function generateImage({ prompt, imageUrl, model }) {
     throw new Error('TOGETHER_AI_API is not set');
   }
 
-  const activeModel = model || IMAGE_MODEL;
+  const activeModel = model || (imageUrl ? SECONDARY_IMAGE_MODEL : IMAGE_MODEL);
   
   console.log("Active Model is:", activeModel);
 
@@ -32,13 +32,12 @@ export async function generateImage({ prompt, imageUrl, model }) {
     response_format: 'b64_json',
   };
 
-  if (imageUrl && typeof imageUrl === 'string' && activeModel === SECONDARY_IMAGE_MODEL) {
-    console.log(`[generateImage] SUCCESS: Attaching image payload.`);
-    
+  if (imageUrl && typeof imageUrl === 'string') {
     payload.image_url = imageUrl;
+    console.log(`[generateImage] SUCCESS: Attaching image payload.`);
   } else {
     console.log(`[generateImage] SKIPPING image attachment. Condition failed.`);
-    console.log(`Reason: Model Match? ${activeModel === SECONDARY_IMAGE_MODEL}`);
+    console.log(`Reason: No imageUrl provided`);
   }
 
   const resp = await fetch(TOGETHER_IMAGE_ENDPOINT, {

@@ -257,8 +257,6 @@ function JournalsContent() {
     );
 }
 
-// --- MAIN EXPORT (The Wrapper) ---
-// This is the default export that Next.js sees. It wraps everything in Suspense.
 export default function JournalsPage() {
     return (
         <Suspense fallback={<div className="journals-loading">Loading journals...</div>}>

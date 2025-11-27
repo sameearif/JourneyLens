@@ -326,6 +326,35 @@
     transform: none;
 }
 
+.btn-danger {
+    flex: 1;
+    padding: 12px;
+    background-color: #fef2f2;
+    border: 0.5px solid #f87171;
+    border-radius: 8px;
+    color: #b91c1c;
+    cursor: pointer;
+    font-family: "IBM Plex Sans Condensed", sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.btn-danger:hover {
+    background-color: #fee2e2;
+    border-color: #ef4444;
+    color: #991b1b;
+}
+
+.btn-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .btn-spinner {
     width: 18px;
     height: 18px;
@@ -350,3 +379,5 @@
 .btn-cancel:hover { color: #111; }
 .btn-submit { padding: 8px 20px; background: #1a1a1a; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; }
 .btn-submit:hover { background: #000; }
+.btn-submit.danger { background: #dc2626; }
+.btn-submit.danger:hover { background: #b91c1c; }

@@ -1,7 +1,4 @@
-// Together AI chat client helper.
-// Provides a minimal wrapper with the same shape used elsewhere (models.generateContent).
-
-export const MODEL = 'meta-llama/Llama-3.3-70B-Instruct-Turbo'; // Recommended stable model
+export const MODEL = 'meta-llama/Llama-3.3-70B-Instruct-Turbo';
 const TOGETHER_API_KEY = process.env.TOGETHER_AI_API || process.env.TOGETHER_API_KEY;
 const TOGETHER_CHAT_ENDPOINT = 'https://api.together.xyz/v1/chat/completions';
 
@@ -64,7 +61,6 @@ export function getGeminiClient() {
           throw new Error(errMsg || 'LLM request failed');
         }
 
-        // Return the raw markdown content directly
         const rawText = data?.choices?.[0]?.message?.content || '';
         
         return { text: rawText.trim() };
