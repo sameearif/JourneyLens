@@ -29,6 +29,13 @@ function Auth() {
     const handleSubmit = async (event) => {
         event.preventDefault();
         setStatus({ error: '', success: '' });
+
+        // Short-circuit signups for the demo environment.
+        if (!isLogin) {
+            setStatus({ error: 'Sign-up has been disabled for the demo purposes', success: '' });
+            return;
+        }
+
         setIsSubmitting(true);
 
         try {
