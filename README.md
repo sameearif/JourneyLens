@@ -73,16 +73,6 @@ Ask for guidance anytime. The AI reads your entire context:
 
 ---
 
-## Demo
-
-<p align="center">
-  <img src="results/plots_v2/rq1_comprehensive.png" alt="RQ1 Results" width="80%"/>
-</p>
-
-<p align="center"><em>User study results showing improved future self clarity after using JourneyLens</em></p>
-
----
-
 ## Installation
 
 ### Prerequisites
